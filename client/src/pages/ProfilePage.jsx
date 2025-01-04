@@ -42,7 +42,7 @@ const ProfilePage = () => {
 
   const checkValidUserId = (type='isValid') => {
     const regex = {
-      isValid: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{7,}$/,
+      isValid: /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/,
       noSpecialChar: /^[A-Za-z\d]+$/,
       oneLetter: /[A-Za-z]/,
       oneNum: /\d/,
@@ -51,7 +51,9 @@ const ProfilePage = () => {
     return regex[type].test(userId)
   }
 
-  const handleUserProfileUpdate = async () => {
+  const handleUserProfileUpdate = async (e) => {
+    e.preventDefault()
+
     if (!userIdValidation["isValid"]) return toast.error("Invalid user id")
     if (!name) return toast.error("Invalid display name")
     
@@ -121,34 +123,36 @@ const ProfilePage = () => {
               <input className="px-4 py-2.5 rounded-lg border w-full text-zinc-400" disabled={true} value={user?.email} />
             </div>
 
-            <div className="space-y-1.5">
-              <div className="text-sm text-zinc-400 flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Display Name
+            <form onSubmit={(e) => handleUserProfileUpdate(e)}>
+              <div className="space-y-1.5">
+                <div className="text-sm text-zinc-400 flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Display Name
+                </div>
+                <input className={`px-4 py-2.5 rounded-lg border w-full focus:ring-1 focus:outline-none focus:ring-primary`} type="text" value={name} onChange={e => setName(e.target.value)}/>
               </div>
-              <input className={`px-4 py-2.5 rounded-lg border w-full focus:ring-1 focus:outline-none focus:ring-primary`} type="text" value={name} onChange={e => setName(e.target.value)}/>
-            </div>
-            
-            <div className="space-y-1.5">
-              <div className="text-sm text-zinc-400 flex items-center gap-2">
-                <UserRoundPen className="w-4 h-4" />
-                User ID
+              
+              <div className="space-y-1.5">
+                <div className="text-sm text-zinc-400 flex items-center gap-2">
+                  <UserRoundPen className="w-4 h-4" />
+                  User ID
+                </div>
+                <div className="flex">
+                <input className={`px-4 py-2.5 rounded-lg border w-full focus:ring-1 focus:outline-none ${userIdValidation["isValid"] ? 'focus:ring-primary' : 'focus:ring-error'}`} type="text" value={userId} onChange={e => setUserId(e.target.value)}/>
+                </div>
+                <p className={`text-xs flex items-center gap-1 ${!userIdValidation["noSpecialChar"] && 'text-error'}`}>{userIdValidation["noSpecialChar"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}Only letters and numbers, no special characters allowed</p>
+                <p className={`text-xs flex items-center gap-1 ${!userIdValidation["oneLetter"] && 'text-error'}`}>{userIdValidation["oneLetter"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}At least one letter</p>
+                <p className={`text-xs flex items-center gap-1 ${!userIdValidation["oneNum"] && 'text-error'}`}>{userIdValidation["oneNum"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}At least one number</p>
+                <p className={`text-xs flex items-center gap-1 ${!userIdValidation["sixChar"] && 'text-error'}`}>{userIdValidation["sixChar"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}Be at least 6 characters</p>
               </div>
-              <div className="flex">
-              <input className={`px-4 py-2.5 rounded-lg border w-full focus:ring-1 focus:outline-none ${userIdValidation["isValid"] ? 'focus:ring-primary' : 'focus:ring-error'}`} type="text" value={userId} onChange={e => setUserId(e.target.value)}/>
+
+              <div className="flex flex-col md:flex-row w-full items-center justify-center gap-3 mt-4">
+                <button className={`p-3 md:p-4 flex items-center rounded-lg border-e-2 ${(userId === user?.userId && name === user?.name) || !userIdValidation["isValid"] || !name || isUpdating ? 'cursor-default bg-gray-100' : 'bg-primary hover:bg-secondary'}`} type="submit" disabled={isUpdating || !userIdValidation["isValid"] || !name}>
+                  {isUpdating ? <Loader2 /> : 'Save Changes'}
+                </button>
+                <p className={(userId === user?.userId && name === user?.name) || isUpdating ? 'cursor-default text-gray-200' : 'cursor-pointer text-primary'} onClick={() => {if(!isUpdating) setUserId(user?.userId); setName(user?.name);}}>Reset</p>
               </div>
-              <p className={`text-xs flex items-center gap-1 ${!userIdValidation["noSpecialChar"] && 'text-error'}`}>{userIdValidation["noSpecialChar"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}Only letters and numbers, no special characters allowed</p>
-              <p className={`text-xs flex items-center gap-1 ${!userIdValidation["oneLetter"] && 'text-error'}`}>{userIdValidation["oneLetter"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}At least one letter</p>
-              <p className={`text-xs flex items-center gap-1 ${!userIdValidation["oneNum"] && 'text-error'}`}>{userIdValidation["oneNum"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}At least one number</p>
-              <p className={`text-xs flex items-center gap-1 ${!userIdValidation["sixChar"] && 'text-error'}`}>{userIdValidation["sixChar"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}Be at least 6 characters</p>
-            </div>
-            <div className="flex flex-col md:flex-row w-full items-center justify-center gap-3">
-              <button className={`p-3 md:p-4 flex items-center rounded-lg border-e-2 ${(userId === user?.userId && name === user?.name) || !userIdValidation["isValid"] || !name || isUpdating ? 'cursor-default bg-gray-100' : 'bg-primary hover:bg-secondary'}`} onClick={handleUserProfileUpdate} disabled={isUpdating || !userIdValidation["isValid"] || !name}>
-                {isUpdating ? <Loader2 /> : 'Save Changes'}
-                
-              </button>
-              <p className={(userId === user?.userId && name === user?.name) || isUpdating ? 'cursor-default text-gray-200' : 'cursor-pointer text-primary'} onClick={() => {if(!isUpdating) setUserId(user?.userId); setName(user?.name);}}>Reset</p>
-            </div>
+            </form>
           </div>
 
           <div className="mt-6 bg-base-300 rounded-xl p-6">

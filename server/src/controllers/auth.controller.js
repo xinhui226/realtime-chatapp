@@ -123,7 +123,7 @@ export const updateProfile = async (req, res) => {
             updatedUser = await User.findByIdAndUpdate(user_id, { profilePic: uploadRes.secure_url }, { new: true });
         } else {
             const { userId, name } = req.body
-            const regex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{7,}$/;
+            const regex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
             const updateBody = {}
 
             if (userId && userId != prevUserId) {
@@ -158,6 +158,52 @@ export const updateProfile = async (req, res) => {
     } catch (error) {
         console.error("Error in updateProfile controller " + error.message);
         res.status(500).json({ error: "Internal server error" });
+    }
+}
+
+export const updateFriends = async (req, res) => {
+    try {
+        const { targetUserId, action } = req.body
+        const user = req.user
+
+        const foundUser = await User.findOne({userId: targetUserId})
+
+        if (!foundUser || targetUserId == user.userId) return res.status(400).json({ message: "Something wrong, please make sure that user id is correct"})
+        
+        let userUpdateBody, friendUpdateBody;
+
+        if (action === 'add') {
+            if (!user.friends.includes(foundUser._id)) {
+                userUpdateBody = { $addToSet: { friends: foundUser._id } }; 
+                friendUpdateBody = { $addToSet: { friends: user._id } }; 
+            } else {
+                return res.status(400).json({ message: "You're already friends with the user!" });
+            }
+        } else if (action === 'remove') {
+            userUpdateBody = { $pull: { friends: foundUser._id } }; 
+            friendUpdateBody = { $pull: { friends: user._id } }; 
+        } else {
+            return res.status(400).json({ message: "Invalid action." });
+        }
+
+        const [updatedUser, updatedFriend] = await Promise.all([
+            User.findByIdAndUpdate(user._id, userUpdateBody, { new: true }),
+            User.findByIdAndUpdate(foundUser._id, friendUpdateBody, { new: true }),
+        ]);
+
+        res.status(200).json({ 
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            profilePic: updatedUser.profilePic,
+            friends: updatedUser.friends,
+            userId: updatedUser.userId,
+            createdAt: updatedUser.createdAt,
+            message: "Friends updated successfully" 
+        });
+    } catch (error) {
+        console.error("Error in updateFriend controller" + error.message);
+        res.status(500).json({ error: "Internal server error" })
     }
 }
 

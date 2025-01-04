@@ -8,12 +8,8 @@ const ChatHeader = () => {
 
   return (
     <div className="p-2.5 border-b border-base-300">
-      <div className="flex items-center gap-3">
-        {/* Close button */}
-        <button onClick={() => setSelectedUser(null)}>
-          <X />
-        </button>
-        <div className="flex items-center gap-3">
+      <div className="flex sm:flex-row-reverse items-center gap-3">
+        <div className="flex items-center gap-3 w-full">
           {/* Avatar */}
           <div className="avatar">
             <div className="size-10 rounded-full relative">
@@ -29,6 +25,10 @@ const ChatHeader = () => {
             </p>
           </div>
         </div>
+        {/* Close button */}
+        <button onClick={() => setSelectedUser(null)}>
+          <X className="size-4 md:size-6" />
+        </button>
       </div>
     </div>
   );

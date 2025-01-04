@@ -90,6 +90,20 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
+    updateFriends: async (data) => {
+        set({ isUpdating: true })
+        try {
+            const res = await axiosInstance.post("/auth/update-friends", data);
+            set({ user: res.data });
+            toast.success(res.data.message);
+        } catch (error) {
+            console.error("Error in updateFriends " + error);
+            toast.error(error?.response?.data?.message);
+        } finally {
+            set({ isUpdating:false })
+        }
+    },
+
     connectSocket: () => {        
         const { user } = get();
         if (!user || get().socket?.connected) return;

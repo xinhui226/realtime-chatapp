@@ -25,8 +25,8 @@ const Sidebar = () => {
     }
     return (
         <aside className="h-full w-[4.5rem] md:w-20 lg:w-72 border-r border-base-300 flex flex-col transition-all duration-200">
-            <div className="border-b border-base-300 w-full p-5">
-                <div className="flex items-center gap-2">
+            <div className="border-b border-base-300 w-full p-3 sm:p-5">
+                <div className="flex items-center gap-2 justify-center lg:justify-start">
                     <Users className="size-6" />
                     <span className="font-medium hidden lg:block">Contacts</span>
                 </div>
