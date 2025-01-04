@@ -115,26 +115,34 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
     try {
-        const user_id = req.user._id;
+        const { _id: user_id, userId: prevUserId, name: prevName } = req.user;
         let updatedUser;
 
         if(req.body.profilePic) {
             const uploadRes = await cloudinary.uploader.upload(req.body.profilePic)
             updatedUser = await User.findByIdAndUpdate(user_id, { profilePic: uploadRes.secure_url }, { new: true });
-        } else if (req.body.userId) {
-            const { userId } = req.body
+        } else {
+            const { userId, name } = req.body
             const regex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{7,}$/;
+            const updateBody = {}
 
-            if(!regex.test(userId)) {
-                return res.status(400).json({ message: "Invalid format field userId" });
+            if (userId && userId != prevUserId) {
+                if(!regex.test(userId)) {
+                    return res.status(400).json({ message: "Invalid format field userId" });
+                }
+                const existUserId = await User.findOne({userId})
+                
+                if (existUserId) {
+                    return res.status(400).json({ message: "User id already existed, please try another" });
+                }
+
+                updateBody["userId"] = userId
             }
-            const existUserId = await User.findOne({userId})
-            
-            if (existUserId) {
-                return res.status(400).json({ message: "User id already existed, please try another" });
+            if (name && name != prevName) {
+                updateBody["name"] = name
             }
 
-            updatedUser = await User.findByIdAndUpdate(user_id, { userId }, { new: true });
+            updatedUser = await User.findByIdAndUpdate(user_id, updateBody, { new: true });
         }
 
         res.status(200).json({ 

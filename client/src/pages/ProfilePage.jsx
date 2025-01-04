@@ -1,13 +1,14 @@
-import { AtSign, Camera, Check, CheckIcon, RotateCcw, User, UserRoundPen, X } from "lucide-react"
+import { AtSign, Camera, CheckIcon, Loader2, User, UserRoundPen, X } from "lucide-react"
 import { useAuthStore } from "../store/useAuthStore"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import { resizeImage } from "../lib/utils"
 
 const ProfilePage = () => {
-  const { user, isUpdatingProfilePic, updateProfile } = useAuthStore()
+  const { user, isUpdatingProfilePic, isUpdating, updateProfile } = useAuthStore()
   const [selectedImg, setSelectedImg] = useState(null)
   const [userId, setUserId] = useState(user?.userId)
+  const [name, setName] = useState(user?.name)
   const [userIdValidation, setUserIdValidation] = useState({
     isValid: true,
     noSpecialChar: true,
@@ -50,14 +51,21 @@ const ProfilePage = () => {
     return regex[type].test(userId)
   }
 
-  const handleUserIdUpdate = async () => {
+  const handleUserProfileUpdate = async () => {
     if (!userIdValidation["isValid"]) return toast.error("Invalid user id")
+    if (!name) return toast.error("Invalid display name")
     
     try {
-      await updateProfile({ userId })
+      let updateBody = {}
+      if (userId != user?.userId) updateBody["userId"] = userId
+      if (name != user?.name) updateBody["name"] = name
+
+      if (Object.keys(updateBody).length == 0) return
+
+      await updateProfile(updateBody)
     } catch (error) {
       console.error("Error resizing image:", error);
-      toast.error("Error occured when updating user id, please try again");
+      toast.error("Error occured when updating profile, please try again");
     }
   }
 
@@ -107,18 +115,18 @@ const ProfilePage = () => {
           <div className="space-y-6">
             <div className="space-y-1.5">
               <div className="text-sm text-zinc-400 flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Full Name
-              </div>
-              <input className="px-4 py-2.5 rounded-lg border w-full text-zinc-400" disabled={true} value={user?.name} />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="text-sm text-zinc-400 flex items-center gap-2">
                 <AtSign className="w-4 h-4" />
                 Email Address
               </div>
               <input className="px-4 py-2.5 rounded-lg border w-full text-zinc-400" disabled={true} value={user?.email} />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="text-sm text-zinc-400 flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Display Name
+              </div>
+              <input className={`px-4 py-2.5 rounded-lg border w-full focus:ring-1 focus:outline-none focus:ring-primary`} type="text" value={name} onChange={e => setName(e.target.value)}/>
             </div>
             
             <div className="space-y-1.5">
@@ -127,18 +135,19 @@ const ProfilePage = () => {
                 User ID
               </div>
               <div className="flex">
-              <input className={`px-4 py-2.5 rounded-lg rounded-e-none border w-full focus:ring-1 focus:outline-none ${userIdValidation["isValid"] ? 'focus:ring-primary' : 'focus:ring-error'}`} type="text" value={userId} onChange={e => setUserId(e.target.value)}/>
-                <button className={`p-3 md:p-4 flex items-center border-e-2 ${userId === user?.userId || !userIdValidation["isValid"] ? 'cursor-default bg-gray-100' : 'bg-primary hover:bg-secondary'}`} onClick={handleUserIdUpdate} disabled={userId === user?.userId || !userIdValidation["isValid"]}>
-                  <Check className="size-4 md:size-6" />
-                </button>
-                <button className={`p-3 md:p-4 flex items-center rounded-e-lg ${userId === user?.userId ? 'cursor-default bg-gray-100' : 'bg-primary'}`} onClick={() => setUserId(user?.userId)}>
-                  <RotateCcw className="size-4 md:size-6" />
-                </button>
+              <input className={`px-4 py-2.5 rounded-lg border w-full focus:ring-1 focus:outline-none ${userIdValidation["isValid"] ? 'focus:ring-primary' : 'focus:ring-error'}`} type="text" value={userId} onChange={e => setUserId(e.target.value)}/>
               </div>
-              <p className="text-xs flex items-center gap-1">{userIdValidation["noSpecialChar"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}Only letters and numbers, no special characters allowed</p>
-              <p className="text-xs flex items-center gap-1">{userIdValidation["oneLetter"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}At least one letter</p>
-              <p className="text-xs flex items-center gap-1">{userIdValidation["oneNum"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}At least one number</p>
-              <p className="text-xs flex items-center gap-1">{userIdValidation["sixChar"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}Be at least 6 characters</p>
+              <p className={`text-xs flex items-center gap-1 ${!userIdValidation["noSpecialChar"] && 'text-error'}`}>{userIdValidation["noSpecialChar"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}Only letters and numbers, no special characters allowed</p>
+              <p className={`text-xs flex items-center gap-1 ${!userIdValidation["oneLetter"] && 'text-error'}`}>{userIdValidation["oneLetter"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}At least one letter</p>
+              <p className={`text-xs flex items-center gap-1 ${!userIdValidation["oneNum"] && 'text-error'}`}>{userIdValidation["oneNum"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}At least one number</p>
+              <p className={`text-xs flex items-center gap-1 ${!userIdValidation["sixChar"] && 'text-error'}`}>{userIdValidation["sixChar"] ? <CheckIcon className="size-3.5" /> : <X className="size-3.5" />}Be at least 6 characters</p>
+            </div>
+            <div className="flex flex-col md:flex-row w-full items-center justify-center gap-3">
+              <button className={`p-3 md:p-4 flex items-center rounded-lg border-e-2 ${(userId === user?.userId && name === user?.name) || !userIdValidation["isValid"] || !name || isUpdating ? 'cursor-default bg-gray-100' : 'bg-primary hover:bg-secondary'}`} onClick={handleUserProfileUpdate} disabled={isUpdating || !userIdValidation["isValid"] || !name}>
+                {isUpdating ? <Loader2 /> : 'Save Changes'}
+                
+              </button>
+              <p className={(userId === user?.userId && name === user?.name) || isUpdating ? 'cursor-default text-gray-200' : 'cursor-pointer text-primary'} onClick={() => {if(!isUpdating) setUserId(user?.userId); setName(user?.name);}}>Reset</p>
             </div>
           </div>
 
