@@ -19,6 +19,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    userId: {
+        type: String,
+        required: true,
+        minlength: 6,
+    },
+    friends: {
+        type: Array,
+        default: [],
+    },
 }, {timestamps: true});
 
 const User = mongoose.model("User", userSchema);

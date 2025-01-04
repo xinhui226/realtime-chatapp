@@ -1,7 +1,19 @@
 import cloudinary from "../lib/cloudinary.js";
-import { generateToken } from "../lib/utils.js";
+import { generateToken, generateUserId } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+
+const generateUniqueUserId = async () => {
+    let userId;
+    let existedUserId;
+
+    do {
+        userId = generateUserId();
+        existedUserId = await User.findOne({ userId });
+    } while (existedUserId);
+
+    return userId;
+}
 
 export const signup = async (req, res) => {
     const { name, email, password } = req.body;
@@ -29,16 +41,21 @@ export const signup = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await User.create({ name, email, password: hashedPassword });
+    let userId = await generateUniqueUserId();
+
+    const user = await User.create({ name, email, password: hashedPassword, userId });
 
     if (user) {
         generateToken(user._id, res);
         await user.save();
         res.status(201).json({ 
-            id: user._id,
+            _id: user._id,
             name: user.name,
             email: user.email,
             profilePic: user.profilePic,
+            friends: user.friends,
+            userId: user.userId,
+            createdAt: user.createdAt,
             message: "User created successfully" 
         });
     } else {
@@ -75,6 +92,9 @@ export const login = async (req, res) => {
             name: user.name,
             email: user.email,
             profilePic: user.profilePic,
+            friends: user.friends,
+            userId: user.userId,
+            createdAt: user.createdAt,
             message: "Login successfully" 
         });
     } catch (error) {
@@ -95,23 +115,36 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
     try {
-        const {profilePic} = req.body;
-        const userId = req.user._id
+        const user_id = req.user._id;
+        let updatedUser;
 
-        if(!profilePic) {
-            return res.status(400).json({ message: "Profile pic is required" });
+        if(req.body.profilePic) {
+            const uploadRes = await cloudinary.uploader.upload(req.body.profilePic)
+            updatedUser = await User.findByIdAndUpdate(user_id, { profilePic: uploadRes.secure_url }, { new: true });
+        } else if (req.body.userId) {
+            const { userId } = req.body
+            const regex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{7,}$/;
+
+            if(!regex.test(userId)) {
+                return res.status(400).json({ message: "Invalid format field userId" });
+            }
+            const existUserId = await User.findOne({userId})
+            
+            if (existUserId) {
+                return res.status(400).json({ message: "User id already existed, please try another" });
+            }
+
+            updatedUser = await User.findByIdAndUpdate(user_id, { userId }, { new: true });
         }
-
-        const uploadRes = await cloudinary.uploader.upload(profilePic)
-        const updatedUser = await User.findByIdAndUpdate(userId, { profilePic: uploadRes.secure_url }, { new: true });
-
-        // req.user = updatedUser;
 
         res.status(200).json({ 
             _id: updatedUser._id,
             name: updatedUser.name,
             email: updatedUser.email,
             profilePic: updatedUser.profilePic,
+            friends: updatedUser.friends,
+            userId: updatedUser.userId,
+            createdAt: updatedUser.createdAt,
             message: "Profile updated successfully" 
         });
     } catch (error) {

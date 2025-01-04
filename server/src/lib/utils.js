@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import randomatic from 'randomatic';
 
 export const generateToken = (userId, res) => {
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, {
@@ -13,3 +14,9 @@ export const generateToken = (userId, res) => {
 
     return token;
 }
+
+export const generateUserId = () => {
+    const letters = randomatic('a', 6); // Generate 6 random letters
+    const numbers = randomatic('0', 4); // Generate 4 random digits
+    return `${letters}${numbers}`;
+};
