@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 import { useChatStore } from "./useChatStore";
 
-const BASE_URL = 'http://localhost:7100';
+const BASE_URL = import.meta.env.MODE === "development" ? 'http://localhost:7100' : '/';
 
 export const useAuthStore = create((set, get) => ({
     user: null,
