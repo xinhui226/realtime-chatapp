@@ -16,7 +16,8 @@ const SignUpPage = () => {
   const { signUp, isSigningUp } = useAuthStore();
 
   const validateForm = () => {
-    if (!formData.name.trim()) return toast.error("Name is required");
+    if (!formData.name.trim()) return toast.error("Display Name is required");
+    if (formData.name.trim().length > 10) return toast.error("Display Name is too long, make it shorter than 10 characters");
     if (!formData.email.trim()) return toast.error("Email is required");
     if (!(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))) return toast.error("Invalid email");
     if (!formData.password.trim()) return toast.error("Password is required");

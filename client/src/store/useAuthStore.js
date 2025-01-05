@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
+import { useChatStore } from "./useChatStore";
 
 const BASE_URL = 'http://localhost:7100';
 
@@ -49,6 +50,7 @@ export const useAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.post("/auth/logout");
             set({ user: null });
+            useChatStore.getState().setSelectedUser(null)
             toast.success(res.data.message);
 
             get().disconnectSocket();
@@ -95,10 +97,9 @@ export const useAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.post("/auth/update-friends", data);
             set({ user: res.data });
-            toast.success(res.data.message);
         } catch (error) {
             console.error("Error in updateFriends " + error);
-            toast.error(error?.response?.data?.message);
+            toast.error(error?.response?.data?.message || error?.response?.message || 'Something wrong, please try again');
         } finally {
             set({ isUpdating:false })
         }
@@ -120,9 +121,20 @@ export const useAuthStore = create((set, get) => ({
             console.log("getOnlineUsers: ", userIds);
             set({ onlineUsers: userIds });
         });
+
+        socket.on("friendsUpdated", (targetUserId) => {
+            useChatStore.getState().getUsers();
+            const selectedUser = useChatStore.getState().selectedUser
+            console.log("t", targetUserId, "s", selectedUser._id);
+            
+            if (targetUserId && selectedUser?._id == targetUserId) useChatStore.getState().setSelectedUser(null)
+        });
     },
 
     disconnectSocket: () => {
-        if (get().socket?.connected) get().socket.disconnect();
+        if (get().socket?.connected) { 
+            get().socket.disconnect();
+            get().socket.off("friendsUpdated");
+        }
     }
 }));

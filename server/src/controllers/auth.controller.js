@@ -1,4 +1,5 @@
 import cloudinary from "../lib/cloudinary.js";
+import { io, getUserSocketId } from "../lib/socketio.js";
 import { generateToken, generateUserId } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
@@ -191,6 +192,16 @@ export const updateFriends = async (req, res) => {
             User.findByIdAndUpdate(foundUser._id, friendUpdateBody, { new: true }),
         ]);
 
+        const targetSocketId = getUserSocketId(foundUser._id);
+        const userSocketId = getUserSocketId(user._id);
+
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('friendsUpdated', action === 'remove' ? user._id : null);
+        }
+        if (userSocketId) {
+            io.to(userSocketId).emit("friendsUpdated", action === 'remove' ? foundUser._id : null);
+        }
+
         res.status(200).json({ 
             _id: updatedUser._id,
             name: updatedUser.name,
@@ -198,8 +209,7 @@ export const updateFriends = async (req, res) => {
             profilePic: updatedUser.profilePic,
             friends: updatedUser.friends,
             userId: updatedUser.userId,
-            createdAt: updatedUser.createdAt,
-            message: "Friends updated successfully" 
+            createdAt: updatedUser.createdAt
         });
     } catch (error) {
         console.error("Error in updateFriend controller" + error.message);

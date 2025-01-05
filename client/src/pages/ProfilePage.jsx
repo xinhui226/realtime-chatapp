@@ -56,6 +56,7 @@ const ProfilePage = () => {
 
     if (!userIdValidation["isValid"]) return toast.error("Invalid user id")
     if (!name) return toast.error("Invalid display name")
+    if (name && name.length > 10) return toast.error("Display name is too long")
     
     try {
       let updateBody = {}
