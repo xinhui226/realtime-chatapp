@@ -1,11 +1,15 @@
 import cloudinary from "../lib/cloudinary.js";
-import { getReceiverSocketId, io } from "../lib/socketio.js";
+import { getUserSocketId, io } from "../lib/socketio.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
 
 export const getUsersForSidebar = async (req, res) => { 
     try {
-        const users = await User.find({ _id: { $ne: req.user._id } }).select("-password");
+        const user = await User.findById(req.user._id).select("friends");
+
+        const users = await User.find({ _id: { $in: user.friends } })
+        .select("-password")
+        .exec();
 
         res.status(200).json(users);
     } catch (error) {
@@ -48,7 +52,7 @@ export const sendMessage = async (req, res) => {
         const newMessage = new Message({ senderId, receiverId, text, image: imageUrl });
         await newMessage.save();
 
-        const receiverSocketId = getReceiverSocketId(receiverId);
+        const receiverSocketId = getUserSocketId(receiverId);
         if (receiverSocketId) {
             io.to(receiverSocketId).emit("newMessage", newMessage);
         }
